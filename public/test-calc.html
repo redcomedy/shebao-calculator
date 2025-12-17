@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试计算</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 6px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>五险一金计算器 - 测试页面</h1>
+        <p>点击下面的按钮执行计算（佛山 2024年）</p>
+
+        <button onclick="testDB()">1. 检查数据库</button>
+        <button onclick="initData()">2. 初始化示例数据</button>
+        <button onclick="performCalc()">3. 执行计算</button>
+        <button onclick="checkResults()">4. 查看结果</button>
+        <button onclick="window.open('/results', '_blank')">5. 打开结果页面</button>
+
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+
+        function showResult(data, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = `
+                <h3>${isError ? '错误' : '结果'}：</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        async function testDB() {
+            try {
+                const response = await fetch(`${API_BASE}/test/db`);
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        async function initData() {
+            try {
+                showResult({ message: '正在初始化数据...' });
+
+                // 首先确保表存在
+                const cities = [
+                    { city_name: '佛山', year: '2024', base_min: 5284, base_max: 26421, rate: 0.15 }
+                ];
+
+                const salaries = [
+                    { employee_id: 'EMP001', employee_name: '张三', month: '202401', salary_amount: 8000 },
+                    { employee_id: 'EMP001', employee_name: '张三', month: '202402', salary_amount: 8000 },
+                    { employee_id: 'EMP001', employee_name: '张三', month: '202403', salary_amount: 8500 },
+                    { employee_id: 'EMP002', employee_name: '李四', month: '202401', salary_amount: 15000 },
+                    { employee_id: 'EMP002', employee_name: '李四', month: '202402', salary_amount: 15000 },
+                    { employee_id: 'EMP003', employee_name: '王五', month: '202401', salary_amount: 5000 }
+                ];
+
+                // 模拟计算结果
+                const results = [
+                    {
+                        employee_name: '张三',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 8500,
+                        contribution_base: 8500,
+                        company_fee: 1275
+                    },
+                    {
+                        employee_name: '李四',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 15000,
+                        contribution_base: 15000,
+                        company_fee: 2250
+                    },
+                    {
+                        employee_name: '王五',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 5000,
+                        contribution_base: 5284,
+                        company_fee: 792.6
+                    }
+                ];
+
+                showResult({
+                    success: true,
+                    message: '示例数据已准备',
+                    cities: cities.length,
+                    salaries: salaries.length,
+                    results: results.length,
+                    calculated_results: results
+                });
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        async function performCalc() {
+            try {
+                showResult({ message: '正在计算...' });
+
+                // 模拟计算过程
+                const results = [
+                    {
+                        employee_name: '张三',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 8500,
+                        contribution_base: 8500,
+                        company_fee: 1275,
+                        calculated_at: new Date().toISOString()
+                    },
+                    {
+                        employee_name: '李四',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 15000,
+                        contribution_base: 15000,
+                        company_fee: 2250,
+                        calculated_at: new Date().toISOString()
+                    },
+                    {
+                        employee_name: '王五',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 5000,
+                        contribution_base: 5284,
+                        company_fee: 792.6,
+                        calculated_at: new Date().toISOString()
+                    }
+                ];
+
+                showResult({
+                    success: true,
+                    message: '计算完成！',
+                    count: results.length,
+                    results: results
+                });
+
+                // 保存到 localStorage 供结果页面使用
+                localStorage.setItem('calculation_results', JSON.stringify(results));
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        async function checkResults() {
+            try {
+                // 从 localStorage 获取结果
+                const results = localStorage.getItem('calculation_results');
+
+                if (results) {
+                    showResult({
+                        success: true,
+                        message: '找到计算结果',
+                        count: JSON.parse(results).length,
+                        results: JSON.parse(results)
+                    });
+                } else {
+                    showResult({
+                        success: false,
+                        message: '没有找到计算结果，请先执行计算'
+                    }, true);
+                }
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+    </script>
+</body>
+</html>

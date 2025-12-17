@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保存计算结果</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 6px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>直接保存计算结果到数据库</h1>
+        <p>这个页面将直接使用 Supabase 客户端保存计算结果</p>
+
+        <button onclick="saveResults()">保存示例计算结果</button>
+        <button onclick="checkResults()">检查结果表</button>
+        <button onclick="window.open('/simple-results', '_blank')">查看结果页面</button>
+
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase 配置
+        const supabaseUrl = 'https://pqwlcijvwafxtpkplcem.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxd2xjaWp2d2FmeHRwa3BsY2VtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTg2NTY2MywiZXhwIjoyMDgxNDQxNjYzfQ.j_fPb0WgOrWX8iY0bm73_WnJGxHrvTVqOw55h9Qn-GQ';
+
+        // 等待 Supabase 库加载
+        window.addEventListener('DOMContentLoaded', function() {
+            if (window.supabase) {
+                console.log('Supabase library loaded successfully');
+            } else {
+                console.error('Supabase library not loaded');
+            }
+        });
+
+        // 创建 Supabase 客户端
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        function showResult(data, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+            resultDiv.innerHTML = `
+                <h3>${isError ? '错误' : '结果'}：</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        async function saveResults() {
+            try {
+                showResult({ message: '正在保存计算结果...' });
+
+                // 示例计算结果
+                const results = [
+                    {
+                        employee_name: '张三',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 8500,
+                        contribution_base: 8500,
+                        company_fee: 1275
+                    },
+                    {
+                        employee_name: '李四',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 15500,
+                        contribution_base: 15500,
+                        company_fee: 2325
+                    },
+                    {
+                        employee_name: '王五',
+                        city_name: '佛山',
+                        year: '2024',
+                        avg_salary: 5000,
+                        contribution_base: 5284,
+                        company_fee: 792.60
+                    }
+                ];
+
+                // 清空现有的结果（可选）
+                // await supabase
+                //     .from('results')
+                //     .delete()
+                //     .eq('city_name', '佛山')
+                //     .eq('year', '2024');
+
+                // 插入新的计算结果
+                const { data, error } = await supabase
+                    .from('results')
+                    .insert(results)
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+
+                showResult({
+                    success: true,
+                    message: '成功保存计算结果！',
+                    count: data.length,
+                    data: data
+                });
+
+                // 2秒后自动跳转到结果页面
+                setTimeout(() => {
+                    window.open('/simple-results', '_blank');
+                }, 2000);
+
+            } catch (error) {
+                showResult({
+                    success: false,
+                    error: error.message || '保存失败'
+                }, true);
+            }
+        }
+
+        async function checkResults() {
+            try {
+                showResult({ message: '正在查询结果表...' });
+
+                const { data, error } = await supabase
+                    .from('results')
+                    .select('*')
+                    .order('calculated_at', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                showResult({
+                    success: true,
+                    message: `找到 ${data.length} 条结果`,
+                    data: data
+                });
+
+            } catch (error) {
+                showResult({
+                    success: false,
+                    error: error.message || '查询失败'
+                }, true);
+            }
+        }
+    </script>
+</body>
+</html>
