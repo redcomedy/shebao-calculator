@@ -143,27 +143,42 @@ export default function UploadPage() {
 
   const loadCitiesAndYears = async () => {
     try {
+      console.log('开始加载数据...');
       const [citiesResponse, yearsResponse] = await Promise.all([
         fetch('/api/cities'),
         fetch('/api/years')
       ]);
 
+      console.log('收到响应，cities status:', citiesResponse.status, 'years status:', yearsResponse.status);
+
       const citiesData = await citiesResponse.json();
       const yearsData = await yearsResponse.json();
 
-      if (citiesData.success) {
+      console.log('Cities data:', citiesData);
+      console.log('Years data:', yearsData);
+
+      if (citiesData.success && citiesData.data) {
         const cities = citiesData.data as any[];
         const uniqueCities = [...new Set(cities.map((c: any) => c.city_name))];
         setCities(uniqueCities);
+        console.log('加载的城市:', uniqueCities);
+      } else {
+        console.error('城市数据加载失败:', citiesData.error);
+        showMessage('error', `加载城市数据失败: ${citiesData.error || '未知错误'}`);
       }
 
-      if (yearsData.success) {
+      if (yearsData.success && yearsData.data) {
         const years = yearsData.data as string[];
         const uniqueYears = [...new Set(years)];
         setYears(uniqueYears.sort((a: string, b: string) => b.localeCompare(a)));
+        console.log('加载的年份:', uniqueYears);
+      } else {
+        console.error('年份数据加载失败:', yearsData.error);
+        showMessage('error', `加载数据失败: ${yearsData.error || '未知错误'}`);
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('加载数据时出错:', error);
+      showMessage('error', '加载数据失败，请刷新页面重试');
     }
   };
 
